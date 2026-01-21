@@ -8,9 +8,12 @@ import domain.model.Task;
 
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 // supply tasks at random intervals
 public final class SupplierProducer implements Producer {
+    private static final Logger LOGGER = Logger.getLogger(SupplierProducer.class.getName());
     private final String name;
     private final Buffer<Task> buffer;
     private final Supplier<Task> taskSupplier;
@@ -41,6 +44,7 @@ public final class SupplierProducer implements Producer {
 
     @Override
     public void run() {
+        LOGGER.info(() -> name + " producer started");
         while (running && !Thread.currentThread().isInterrupted()) {
             try {
                 int delay = ThreadLocalRandom.current().nextInt(minDelayMs, maxDelayMs + 1);
@@ -51,14 +55,17 @@ public final class SupplierProducer implements Producer {
                 eventPublisher.publish(name, "delivered " + task.getType() + " task#" + task.getId(), buffer.size());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                LOGGER.log(Level.INFO, name + " producer interrupted", e);
                 break;
             }
         }
+        LOGGER.info(() -> name + " producer stopped");
     }
 
     @Override
     public void stop() {
         running = false;
+        LOGGER.info(() -> name + " producer stop requested");
     }
 
     @Override
