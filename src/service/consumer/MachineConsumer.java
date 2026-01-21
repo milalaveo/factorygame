@@ -6,8 +6,12 @@ import domain.contract.GameEventPublisher;
 import domain.contract.GameMetrics;
 import domain.model.Task;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 // process tasks from the buffer
 public final class MachineConsumer implements Consumer {
+    private static final Logger LOGGER = Logger.getLogger(MachineConsumer.class.getName());
     private final String name;
     private final Buffer<Task> buffer;
     private final GameMetrics metrics;
@@ -29,6 +33,7 @@ public final class MachineConsumer implements Consumer {
 
     @Override
     public void run() {
+        LOGGER.info(() -> name + " consumer started");
         while (running && !Thread.currentThread().isInterrupted()) {
             try {
                 Task task = buffer.take();
@@ -38,14 +43,17 @@ public final class MachineConsumer implements Consumer {
                 eventPublisher.publish(name, "assembled " + task.getType() + " task#" + task.getId(), buffer.size());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                LOGGER.log(Level.INFO, name + " consumer interrupted", e);
                 break;
             }
         }
+        LOGGER.info(() -> name + " consumer stopped");
     }
 
     @Override
     public void stop() {
         running = false;
+        LOGGER.info(() -> name + " consumer stop requested");
     }
 
     @Override
